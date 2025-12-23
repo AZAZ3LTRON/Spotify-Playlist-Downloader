@@ -191,24 +191,20 @@ class Downloader:
         
     def download_track_album(self):
         """
-        Download a single track or album
+        Download a single track
         """
-        url = input("Enter Spotify track or album URL: ").strip()
+        url = input("Enter Spotify track url:- ").strip()
         
         # Get user preferences
         self.get_user_preferences()
         
         # Set the template:
-        if "album" in url.lower():
-            output_template = str(self.__output_dir / "{artist}/{album}/{title}.{output-ext}")
-        else:
-            output_template = str(self.__output_dir / "{artist} - {title}.{output-ext}")
+        output_template = str(self.__output_dir / "s{title}.{output-ext}")
             
         for attempt in range(1, MAX_RETRIES + 1):
             print(f"Downloading ({attempt}/{MAX_RETRIES} tries): {url}")
             
             result = self.run_download(url, output_template)
-            
             
             if hasattr(result, 'returncode'):
                 if result.returncode == 100: # Metadat TypeError
@@ -223,6 +219,37 @@ class Downloader:
                 return True
             elif attempt < MAX_RETRIES:
                 logger.warning(f"Download failed. Retrying in {RETRY_DELAY} seconds...")
+                time.sleep(RETRY_DELAY)
+            else:
+                logger.error(f"Failed to download after {MAX_RETRIES} attempts: {url}")
+                return False
+    
+    def download_album(self):
+        """ Download an album"""
+        url = input("Enter Spotify album url:- ").strip()
+        
+        self.get_user_preferences()
+        
+        #Set the template
+        output_template = str(self.__output_dir / "{artist}/{album}/{title}.{output-ext}")
+        
+        for attempt in range(1, MAX_RETRIES + 1):
+            print(f"Downloading ({attempt}/{MAX_RETRIES} tries): {url}")
+            result = self.run_download(url, output_template)
+            
+            if hasattr(result, 'returncode'):
+                if result.returncode == 100:
+                    logger.error(f"Non - retryable error for {url}: Metadata TypeError")
+                    return False
+                elif result.returncode == 101:
+                    logger.error(f"Non-retryable error for {url}: No results found")
+                    return False
+                
+            if isinstance(result, subprocess.CompletedProcess) and result.returncode == 0:
+                logger.info(f"Successful downloaded: {url}")
+                return True
+            elif attempt < MAX_RETRIES:
+                logger.warning(f"Download failed. Retrying in {RETRY_DELAY} seconds... ")
                 time.sleep(RETRY_DELAY)
             else:
                 logger.error(f"Failed to download after {MAX_RETRIES} attempts: {url}")
