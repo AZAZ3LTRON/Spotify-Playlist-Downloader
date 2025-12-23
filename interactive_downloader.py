@@ -199,7 +199,7 @@ class Downloader:
         self.get_user_preferences()
         
         # Set the template:
-        output_template = str(self.__output_dir / "s{title}.{output-ext}")
+        output_template = str(self.__output_dir / "{title}.{output-ext}")
             
         for attempt in range(1, MAX_RETRIES + 1):
             print(f"Downloading ({attempt}/{MAX_RETRIES} tries): {url}")
